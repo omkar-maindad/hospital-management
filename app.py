@@ -7,11 +7,14 @@ app.secret_key = os.urandom(24)
 
 @app.route('/')
 def index():
-    # Fetch summary stats
-    patients_count = len(db.fetch_all("SELECT PatientID FROM Patients"))
-    doctors_count = len(db.fetch_all("SELECT DoctorID FROM Doctors"))
-    appointments_count = len(db.fetch_all("SELECT AppointmentID FROM Appointments"))
-    
+    # Fetch summary stats with optimized single-value COUNT queries
+    try:
+        patients_count = db.fetch_all("SELECT COUNT(*) as cnt FROM Patients")[0]['cnt']
+        doctors_count = db.fetch_all("SELECT COUNT(*) as cnt FROM Doctors")[0]['cnt']
+        appointments_count = db.fetch_all("SELECT COUNT(*) as cnt FROM Appointments")[0]['cnt']
+    except Exception:
+        patients_count = doctors_count = appointments_count = 0
+        
     return render_template('index.html', p_count=patients_count, d_count=doctors_count, a_count=appointments_count)
 
 # --- Patients Management ---
