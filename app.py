@@ -35,7 +35,7 @@ def manage_patients():
             flash('Failed to add patient.', 'error')
         return redirect(url_for('manage_patients'))
         
-    patients = db.fetch_all("SELECT * FROM Patients ORDER BY CreatedAt DESC")
+    patients = db.fetch_all("SELECT * FROM Patients ORDER BY PatientID ASC")
     return render_template('patient.html', patients=patients)
 
 # --- Doctors Management ---
