@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Patients | CareSync{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800">Patient Management</h2>
+    <button onclick="document.getElementById('addPatientModal').classList.remove('hidden')" class="btn-primary text-sm shadow-md">
+        <i class="fa-solid fa-plus mr-2"></i> Add Patient
+    </button>
+</div>
+
+<!-- Add Patient Modal (Hidden by default) -->
+<div id="addPatientModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+    <div class="glass-card w-full max-w-lg mx-auto p-8 relative">
+        <button onclick="document.getElementById('addPatientModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <h3 class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Register New Patient</h3>
+        <form action="{{ url_for('manage_patients') }}" method="POST" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input type="text" name="first_name" required class="form-input">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input type="text" name="last_name" required class="form-input">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                    <input type="date" name="dob" required class="form-input">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <select name="gender" required class="form-input bg-white">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                <input type="text" name="contact" required class="form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea name="address" rows="3" class="form-input"></textarea>
+            </div>
+            <div class="pt-4 text-right">
+                <button type="submit" class="btn-primary w-full shadow-lg">Register Patient</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Patient List Table -->
+<div class="glass-card mt-6">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 rounded-t-xl">
+        <h3 class="text-lg font-semibold text-gray-800">Registered Patients</h3>
+    </div>
+    <div class="table-container">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>DOB</th>
+                    <th>Gender</th>
+                    <th>Contact</th>
+                    <th>Registered At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td class="font-medium">#{{ patient.PatientID }}</td>
+                    <td>
+                        <div class="font-semibold text-gray-900">{{ patient.FirstName }} {{ patient.LastName }}</div>
+                        <div class="text-xs text-gray-500">{{ patient.Address[:30] + '...' if patient.Address else 'No address' }}</div>
+                    </td>
+                    <td>{{ patient.DOB }}</td>
+                    <td>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            {{ patient.Gender }}
+                        </span>
+                    </td>
+                    <td>{{ patient.ContactNumber }}</td>
+                    <td class="text-gray-500 text-sm">{{ patient.CreatedAt.strftime('%Y-%m-%d %H:%M') if patient.CreatedAt else 'N/A' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-gray-500 italic">No patients registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

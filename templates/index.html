@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | CareSync{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Hospital Dashboard</h1>
+        <p class="mt-1 text-sm text-gray-500">Welcome to CareSync Management Portal</p>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    
+    <div class="glass-card p-6 flex items-center justify-between">
+        <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Patients</p>
+            <p class="text-3xl font-bold text-indigo-600 mt-1">{{ p_count }}</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-indigo-100 flex justify-center items-center text-indigo-600 text-xl shadow-sm">
+            <i class="fa-solid fa-users"></i>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 flex items-center justify-between">
+        <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Doctors</p>
+            <p class="text-3xl font-bold text-emerald-600 mt-1">{{ d_count }}</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-emerald-100 flex justify-center items-center text-emerald-600 text-xl shadow-sm">
+            <i class="fa-solid fa-user-md"></i>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 flex items-center justify-between">
+        <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Appointments</p>
+            <p class="text-3xl font-bold text-amber-500 mt-1">{{ a_count }}</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-amber-100 flex justify-center items-center text-amber-600 text-xl shadow-sm">
+            <i class="fa-solid fa-calendar-check"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="glass-card p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Quick Actions</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="{{ url_for('manage_patients') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-colors text-gray-700 hover:text-indigo-700">
+            <i class="fa-solid fa-user-plus text-2xl mb-2 text-indigo-500"></i>
+            <span class="font-medium text-sm">Add Patient</span>
+        </a>
+        <a href="{{ url_for('manage_appointments') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors text-gray-700 hover:text-purple-700">
+            <i class="fa-solid fa-calendar-plus text-2xl mb-2 text-purple-500"></i>
+            <span class="font-medium text-sm">Book Appointment</span>
+        </a>
+        <a href="{{ url_for('manage_doctors') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition-colors text-gray-700 hover:text-emerald-700">
+            <i class="fa-solid fa-stethoscope text-2xl mb-2 text-emerald-500"></i>
+            <span class="font-medium text-sm">View Doctors</span>
+        </a>
+        <a href="{{ url_for('manage_billing') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-rose-400 hover:bg-rose-50 transition-colors text-gray-700 hover:text-rose-700">
+            <i class="fa-solid fa-file-invoice-dollar text-2xl mb-2 text-rose-500"></i>
+            <span class="font-medium text-sm">Pending Bills</span>
+        </a>
+    </div>
+</div>
+
+{% endblock %}
