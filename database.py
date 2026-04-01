@@ -36,6 +36,7 @@ def fetch_all(query, params=None):
     try:
         cursor.execute(query, params or ())
         result = cursor.fetchall()
+        conn.commit()  # Forces MySQL to clear REPEATABLE READ snapshots
         return result
     finally:
         cursor.close()
