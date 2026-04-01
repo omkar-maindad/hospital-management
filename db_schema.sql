@@ -157,15 +157,15 @@ INSERT INTO Patients (FirstName, LastName, DOB, Gender, ContactNumber, Address) 
 
 -- Insert historical Appointments (Mostly Completed, Some Scheduled/Cancelled)
 INSERT INTO Appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, Status) VALUES
-(1, 1, '2023-11-10', '10:00:00', 'Completed'),
-(2, 2, '2023-11-12', '11:00:00', 'Completed'),
-(3, 3, '2023-11-15', '09:30:00', 'Completed'),
-(4, 4, '2023-11-18', '14:00:00', 'Completed'),
-(5, 5, '2023-11-20', '16:00:00', 'Completed'),
-(6, 6, '2023-12-05', '10:30:00', 'Completed'),
-(1, 1, '2024-04-10', '10:00:00', 'Scheduled'),
-(7, 2, '2024-04-12', '15:00:00', 'Scheduled'),
-(3, 2, '2024-04-15', '09:00:00', 'Cancelled');
+(1, 1, '2026-01-15', '10:00:00', 'Completed'),
+(2, 2, '2026-01-22', '11:00:00', 'Completed'),
+(3, 3, '2026-02-10', '09:30:00', 'Completed'),
+(4, 4, '2026-02-18', '14:00:00', 'Completed'),
+(5, 5, '2026-02-28', '16:00:00', 'Completed'),
+(6, 6, '2026-03-01', '10:30:00', 'Completed'),
+(1, 1, '2026-04-16', '10:00:00', 'Scheduled'),
+(7, 2, '2026-04-18', '15:00:00', 'Scheduled'),
+(3, 2, '2026-04-01', '09:00:00', 'Cancelled');
 
 -- Insert Medical History (Rich mock context)
 INSERT INTO MedicalHistory (PatientID, DoctorID, Diagnosis, Treatment, DateRecorded) VALUES
