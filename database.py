@@ -1,23 +1,31 @@
 import mysql.connector
+from mysql.connector import pooling
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+connection_pool = None
+
 def get_db_connection():
+    global connection_pool
     try:
-        conn = mysql.connector.connect(
-            host=os.getenv('DB_HOST', 'localhost').strip(),
-            port=int(os.getenv('DB_PORT', 3306)),
-            user=os.getenv('DB_USER', 'root').strip(),
-            password=os.getenv('DB_PASSWORD', '').strip(),
-            database=os.getenv('DB_NAME', 'hospital_db').strip(),
-            connection_timeout=5,
-            ssl_disabled=False
-        )
-        return conn
+        if connection_pool is None:
+            connection_pool = mysql.connector.pooling.MySQLConnectionPool(
+                pool_name="caresync_pool",
+                pool_size=5,
+                pool_reset_session=True,
+                host=os.getenv('DB_HOST', 'localhost').strip(),
+                port=int(os.getenv('DB_PORT', 3306)),
+                user=os.getenv('DB_USER', 'root').strip(),
+                password=os.getenv('DB_PASSWORD', '').strip(),
+                database=os.getenv('DB_NAME', 'hospital_db').strip(),
+                connection_timeout=10,
+                ssl_disabled=False
+            )
+        return connection_pool.get_connection()
     except mysql.connector.Error as err:
-        print(f"Error connecting to database: {err}")
+        print(f"Error connecting to database pool: {err}")
         return None
 
 def fetch_all(query, params=None):
