@@ -1,12 +1,11 @@
--- Hospital Patient Management System - Enhanced Database Schema & Pre-Filled Mock Data
+-- Hospital Patient Management System
 
 DROP DATABASE IF EXISTS hospital_db;
 CREATE DATABASE hospital_db;
 USE hospital_db;
 
--- ==========================================
 -- 1. Patients Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS Patients (
     PatientID INT AUTO_INCREMENT PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -18,9 +17,8 @@ CREATE TABLE IF NOT EXISTS Patients (
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ==========================================
 -- 2. Doctors Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS Doctors (
     DoctorID INT AUTO_INCREMENT PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -30,9 +28,8 @@ CREATE TABLE IF NOT EXISTS Doctors (
     Email VARCHAR(100) UNIQUE NOT NULL
 );
 
--- ==========================================
 -- 3. Appointments Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS Appointments (
     AppointmentID INT AUTO_INCREMENT PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -44,9 +41,8 @@ CREATE TABLE IF NOT EXISTS Appointments (
     FOREIGN KEY (DoctorID) REFERENCES Doctors(DoctorID) ON DELETE CASCADE
 );
 
--- ==========================================
 -- 4. Medical History Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS MedicalHistory (
     RecordID INT AUTO_INCREMENT PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -58,9 +54,8 @@ CREATE TABLE IF NOT EXISTS MedicalHistory (
     FOREIGN KEY (DoctorID) REFERENCES Doctors(DoctorID) ON DELETE CASCADE
 );
 
--- ==========================================
 -- 5. Prescriptions Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS Prescriptions (
     PrescriptionID INT AUTO_INCREMENT PRIMARY KEY,
     AppointmentID INT NOT NULL,
@@ -70,9 +65,8 @@ CREATE TABLE IF NOT EXISTS Prescriptions (
     FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID) ON DELETE CASCADE
 );
 
--- ==========================================
 -- 6. Billing Table
--- ==========================================
+
 CREATE TABLE IF NOT EXISTS Billing (
     BillID INT AUTO_INCREMENT PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -84,12 +78,12 @@ CREATE TABLE IF NOT EXISTS Billing (
     FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID) ON DELETE SET NULL
 );
 
--- ==========================================================
 -- PL/SQL Elements (MySQL Stored Procedures & Triggers)
--- ==========================================================
+
 DELIMITER //
 
 -- STORED PROCEDURE: Book Appointment safely using Transactions
+
 CREATE PROCEDURE BookAppointment (
     IN p_PatientID INT,
     IN p_DoctorID INT,
@@ -120,6 +114,7 @@ BEGIN
 END //
 
 -- TRIGGER: Auto-Generate Pending Bill after Appointment is Completed
+
 CREATE TRIGGER AfterAppointmentComplete
 AFTER UPDATE ON Appointments
 FOR EACH ROW
@@ -132,11 +127,10 @@ END //
 
 DELIMITER ;
 
--- ==========================================================
--- SAMPLE DATA INSERTION (RICH PRE-DATA)
--- ==========================================================
+-- SAMPLE DATA INSERTION
 
--- Insert Doctors (Extensive Mock Data)
+-- Insert Doctors (Mock Data)
+
 INSERT INTO Doctors (FirstName, LastName, Specialization, ContactNumber, Email) VALUES
 ('Arun', 'Sharma', 'Cardiologist', '9876543210', 'arun.sharma@caresync.com'),
 ('Priya', 'Mehta', 'Neurologist', '8765432109', 'priya.mehta@caresync.com'),
@@ -145,7 +139,8 @@ INSERT INTO Doctors (FirstName, LastName, Specialization, ContactNumber, Email) 
 ('Vikram', 'Patil', 'Dermatologist', '5432109876', 'vikram.patil@caresync.com'),
 ('Neha', 'Verma', 'General Physician', '4321098765', 'neha.verma@caresync.com');
 
--- Insert Patients (Extensive Mock Data)
+-- Insert Patients (Mock Data)
+
 INSERT INTO Patients (FirstName, LastName, DOB, Gender, ContactNumber, Address) VALUES
 ('Rahul', 'Joshi', '1985-04-12', 'Male', '9123456780', '14 MG Road, Corel Appt, Pune, Maharashtra'),
 ('Anjali', 'Nair', '1992-08-25', 'Female', '9234567891', '102 Sunrise Towers, Koregaon Park, Pune'),
@@ -155,7 +150,8 @@ INSERT INTO Patients (FirstName, LastName, DOB, Gender, ContactNumber, Address) 
 ('Sneha', 'Kapoor', '1995-12-18', 'Female', '9678901235', 'Green Fields Society, Baner, Pune'),
 ('Manoj', 'Tiwari', '1980-07-07', 'Male', '9789012346', 'Blue Skies Bldg, Viman Nagar, Pune');
 
--- Insert historical Appointments (Mostly Completed, Some Scheduled/Cancelled)
+-- Insert historical Appointments
+
 INSERT INTO Appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, Status) VALUES
 (1, 1, '2026-01-15', '10:00:00', 'Completed'),
 (2, 2, '2026-01-22', '11:00:00', 'Completed'),
@@ -167,7 +163,8 @@ INSERT INTO Appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime,
 (7, 2, '2026-04-18', '15:00:00', 'Scheduled'),
 (3, 2, '2026-04-01', '09:00:00', 'Cancelled');
 
--- Insert Medical History (Rich mock context)
+-- Insert Medical History (mock)
+
 INSERT INTO MedicalHistory (PatientID, DoctorID, Diagnosis, Treatment, DateRecorded) VALUES
 (1, 1, 'Mild Hypertension and elevated cholesterol.', 'Prescribed daily walking 45 mins, low sodium diet, and Atorvastatin 10mg.', '2023-11-10 10:30:00'),
 (2, 2, 'Frequent tension headaches due to stress and posture.', 'Ergonomic workspace setup, Amitriptyline 10mg at night if severe.', '2023-11-12 11:30:00'),
@@ -176,7 +173,8 @@ INSERT INTO MedicalHistory (PatientID, DoctorID, Diagnosis, Treatment, DateRecor
 (5, 5, 'Eczema flare-up on forearms.', 'Hydrocortisone cream 1% topical, moisturizing regularly with cetaphil.', '2023-11-20 16:20:00'),
 (6, 6, 'Acute gastroenteritis. Mild dehydration.', 'ORS solution 1 litre a day, soft diet. Avoid dairy and sugar for 3 days.', '2023-12-05 11:00:00');
 
--- Insert Prescriptions 
+-- Insert Prescriptions
+
 INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) VALUES
 (1, 'Atorvastatin', '10mg', '1 pill at night after dinner'),
 (2, 'Amitriptyline', '10mg', 'Take 1 pill at night before bed only if pain exists'),
@@ -185,7 +183,8 @@ INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) 
 (5, 'Hydrocortisone', '1% cream', 'Apply thin layer on affected areas twice daily'),
 (6, 'Electral ORS', '1 Sachet', 'Mix in 1 litre water and sip throughout day');
 
--- Insert Billing (Historical paid and recent pending bills)
+-- Insert Billing
+
 INSERT INTO Billing (PatientID, AppointmentID, Amount, DateIssued, PaymentStatus) VALUES
 (1, 1, 850.00, '2023-11-10 10:35:00', 'Paid'),
 (2, 2, 1000.00, '2023-11-12 11:35:00', 'Paid'),

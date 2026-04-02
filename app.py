@@ -99,6 +99,45 @@ def manage_appointments():
     
     return render_template('appointment.html', appointments=appointments, patients=patients, doctors=doctors)
 
+# --- Prescriptions Management ---
+@app.route('/prescriptions', methods=['GET', 'POST'])
+def manage_prescriptions():
+    if request.method == 'POST':
+        appt_id = request.form['appointment_id']
+        med_name = request.form['medication_name']
+        dosage = request.form['dosage']
+        instructions = request.form['instructions']
+        
+        query = "INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) VALUES (%s, %s, %s, %s)"
+        if db.execute_query(query, (appt_id, med_name, dosage, instructions)):
+            flash('Prescription added successfully!', 'success')
+        else:
+            flash('Failed to add prescription.', 'error')
+        return redirect(url_for('manage_prescriptions'))
+        
+    prescriptions = db.fetch_all('''
+        SELECT pr.PrescriptionID, pr.MedicationName, pr.Dosage, pr.Instructions,
+               a.AppointmentDate,
+               p.FirstName as PFName, p.LastName as PLName,
+               d.FirstName as DFName, d.LastName as DLName
+        FROM Prescriptions pr
+        JOIN Appointments a ON pr.AppointmentID = a.AppointmentID
+        JOIN Patients p ON a.PatientID = p.PatientID
+        JOIN Doctors d ON a.DoctorID = d.DoctorID
+        ORDER BY pr.PrescriptionID DESC
+    ''')
+    
+    appointments = db.fetch_all('''
+        SELECT a.AppointmentID, a.AppointmentDate, p.FirstName, p.LastName, d.LastName as DLastName
+        FROM Appointments a
+        JOIN Patients p ON a.PatientID = p.PatientID
+        JOIN Doctors d ON a.DoctorID = d.DoctorID
+        WHERE a.Status != 'Cancelled'
+        ORDER BY a.AppointmentDate DESC
+    ''')
+    
+    return render_template('prescription.html', prescriptions=prescriptions, appointments=appointments)
+
 # --- Billing Management ---
 @app.route('/billing', methods=['GET', 'POST'])
 def manage_billing():
