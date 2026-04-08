@@ -1,9 +1,37 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import database as db
 import os
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# --- Security Authentication System ---
+@app.before_request
+def require_login():
+    allowed_routes = ['login', 'static']
+    if request.endpoint not in allowed_routes and 'logged_in' not in session:
+        return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = request.form.get('username')
+        pwd = request.form.get('password')
+        # Fast presentation credentials
+        if user == 'admin' and pwd == 'password123':
+            session['logged_in'] = True
+            flash('Secure access granted.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid Administrator credentials.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('System session terminated securely.', 'success')
+    return redirect(url_for('login'))
+
 
 @app.route('/')
 def index():
