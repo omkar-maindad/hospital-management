@@ -180,7 +180,9 @@ def manage_appointments():
             # Check Doctor Leaves
             is_on_leave = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (d_id, date))
             if is_on_leave:
-                flash('The Doctor is officially marked on leave for this date. Please select another date.', 'error')
+                doc = db.fetch_all("SELECT FirstName, LastName FROM Doctors WHERE DoctorID=%s", (d_id,))
+                d_name = f"{doc[0]['FirstName']} {doc[0]['LastName']}" if doc else ""
+                flash(f'Dr. {d_name} is not available on specified date.', 'error')
                 return redirect(url_for('manage_appointments'))
 
             # Check 30-Minute Time Collision Lock
@@ -241,7 +243,9 @@ def edit_appointment(id):
 
         is_on_leave = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (d_id, date))
         if is_on_leave:
-            flash('The Doctor is officially marked on leave for this rescheduled date.', 'error')
+            doc = db.fetch_all("SELECT FirstName, LastName FROM Doctors WHERE DoctorID=%s", (d_id,))
+            d_name = f"{doc[0]['FirstName']} {doc[0]['LastName']}" if doc else ""
+            flash(f'Dr. {d_name} is not available on specified date.', 'error')
             return redirect(url_for('manage_appointments'))
 
         collisions = db.fetch_all("""
