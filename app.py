@@ -56,6 +56,12 @@ def manage_patients():
         contact = request.form['contact']
         address = request.form['address']
         
+        # Anti-Duplication Engine
+        duplicate = db.fetch_all("SELECT 1 FROM Patients WHERE FirstName=%s AND LastName=%s AND ContactNumber=%s", (fname, lname, contact))
+        if duplicate:
+            flash('ERROR: Identical Patient Record already exists.', 'error')
+            return redirect(url_for('manage_patients'))
+            
         query = "INSERT INTO Patients (FirstName, LastName, DOB, Gender, ContactNumber, Address) VALUES (%s, %s, %s, %s, %s, %s)"
         if db.execute_query(query, (fname, lname, dob, gender, contact, address)):
             flash('Patient added successfully!', 'success')
@@ -100,6 +106,12 @@ def manage_doctors():
         contact = request.form['contact']
         email = request.form['email']
         
+        # Anti-Duplication Engine
+        duplicate = db.fetch_all("SELECT 1 FROM Doctors WHERE Email=%s OR ContactNumber=%s", (email, contact))
+        if duplicate:
+            flash('ERROR: Doctor with this Email or Contact already registered.', 'error')
+            return redirect(url_for('manage_doctors'))
+            
         query = "INSERT INTO Doctors (FirstName, LastName, Specialization, ContactNumber, Email) VALUES (%s, %s, %s, %s, %s)"
         if db.execute_query(query, (fname, lname, spec, contact, email)):
             flash('Doctor added successfully!', 'success')
@@ -133,6 +145,21 @@ def delete_doctor(id):
         flash('Failed to remove doctor.', 'error')
     return redirect(url_for('manage_doctors'))
 
+@app.route('/doctors/leave/<int:id>', methods=['POST'])
+def mark_doctor_leave(id):
+    leave_date = request.form['leave_date']
+    exists = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (id, leave_date))
+    if exists:
+        flash('Doctor is already marked on leave for this date.', 'error')
+        return redirect(url_for('manage_doctors'))
+    
+    query = "INSERT INTO DoctorLeaves (DoctorID, LeaveDate) VALUES (%s, %s)"
+    if db.execute_query(query, (id, leave_date)):
+        flash('Leave scheduled successfully on the calendar.', 'success')
+    else:
+        flash('Failed to schedule leave.', 'error')
+    return redirect(url_for('manage_doctors'))
+
 # --- Appointments Booking & Management ---
 @app.route('/appointments', methods=['GET', 'POST'])
 def manage_appointments():
@@ -142,6 +169,30 @@ def manage_appointments():
             d_id = request.form['doctor_id']
             date = request.form['date']
             time = request.form['time']
+            
+            # --- Advanced Pre-Flight Validation ---
+            from datetime import datetime
+            time_obj = datetime.strptime(time, '%H:%M').time()
+            if not (datetime.strptime('09:00', '%H:%M').time() <= time_obj <= datetime.strptime('21:00', '%H:%M').time()):
+                flash('Hospital operates strictly from 9 AM to 9 PM. Please select a valid time.', 'error')
+                return redirect(url_for('manage_appointments'))
+
+            # Check Doctor Leaves
+            is_on_leave = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (d_id, date))
+            if is_on_leave:
+                flash('The Doctor is officially marked on leave for this date. Please select another date.', 'error')
+                return redirect(url_for('manage_appointments'))
+
+            # Check 30-Minute Time Collision Lock
+            collisions = db.fetch_all("""
+                SELECT 1 FROM Appointments 
+                WHERE DoctorID=%s AND AppointmentDate=%s AND Status != 'Cancelled'
+                AND ABS(TIMESTAMPDIFF(MINUTE, AppointmentTime, STR_TO_DATE(%s, '%H:%i'))) < 30
+            """, (d_id, date, time))
+
+            if collisions:
+                flash('Time slot not available, please select a time slot of after half an hour.', 'error')
+                return redirect(url_for('manage_appointments'))
             
             # Using our Stored Procedure with ACIDs
             message = db.call_book_appointment_proc(p_id, d_id, date, time)
@@ -178,6 +229,31 @@ def manage_appointments():
 def edit_appointment(id):
     date = request.form['date']
     time = request.form['time']
+    
+    appt = db.fetch_all("SELECT DoctorID FROM Appointments WHERE AppointmentID=%s", (id,))
+    if appt:
+        d_id = appt[0]['DoctorID']
+        from datetime import datetime
+        time_obj = datetime.strptime(time, '%H:%M').time()
+        if not (datetime.strptime('09:00', '%H:%M').time() <= time_obj <= datetime.strptime('21:00', '%H:%M').time()):
+            flash('Hospital operates strictly from 9 AM to 9 PM.', 'error')
+            return redirect(url_for('manage_appointments'))
+
+        is_on_leave = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (d_id, date))
+        if is_on_leave:
+            flash('The Doctor is officially marked on leave for this rescheduled date.', 'error')
+            return redirect(url_for('manage_appointments'))
+
+        collisions = db.fetch_all("""
+            SELECT 1 FROM Appointments 
+            WHERE DoctorID=%s AND AppointmentDate=%s AND Status != 'Cancelled' AND AppointmentID != %s
+            AND ABS(TIMESTAMPDIFF(MINUTE, AppointmentTime, STR_TO_DATE(%s, '%H:%i'))) < 30
+        """, (d_id, date, id, time))
+
+        if collisions:
+            flash('Time slot not available, please select a time slot of after half an hour.', 'error')
+            return redirect(url_for('manage_appointments'))
+
     # Minimal reschedule (Does not trigger ACIDs in SP, pure update)
     query = "UPDATE Appointments SET AppointmentDate=%s, AppointmentTime=%s WHERE AppointmentID=%s"
     if db.execute_query(query, (date, time, id)):
@@ -203,6 +279,12 @@ def manage_prescriptions():
         dosage = request.form['dosage']
         instructions = request.form['instructions']
         
+        # Anti-Duplication Engine
+        duplicate = db.fetch_all("SELECT 1 FROM Prescriptions WHERE AppointmentID=%s AND MedicationName=%s", (appt_id, med_name))
+        if duplicate:
+            flash('ERROR: Exact medication already prescribed for this Appointment.', 'error')
+            return redirect(url_for('manage_prescriptions'))
+            
         query = "INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) VALUES (%s, %s, %s, %s)"
         if db.execute_query(query, (appt_id, med_name, dosage, instructions)):
             flash('Prescription added successfully!', 'success')
@@ -301,6 +383,13 @@ def view_history():
         d_id = request.form['doctor_id']
         diag = request.form['diagnosis']
         treat = request.form['treatment']
+        
+        # Anti-Duplication Engine 
+        duplicate = db.fetch_all("SELECT 1 FROM MedicalHistory WHERE PatientID=%s AND DoctorID=%s AND Diagnosis=%s AND Treatment=%s AND DATE(DateRecorded) = CURDATE()", (p_id, d_id, diag, treat))
+        if duplicate:
+            flash('ERROR: Exact identical diagnosis & treatment already recorded against this patient today.', 'error')
+            return redirect(url_for('view_history'))
+            
         query = "INSERT INTO MedicalHistory (PatientID, DoctorID, Diagnosis, Treatment) VALUES (%s, %s, %s, %s)"
         if db.execute_query(query, (p_id, d_id, diag, treat)):
             flash('Medical record added successfully.', 'success')

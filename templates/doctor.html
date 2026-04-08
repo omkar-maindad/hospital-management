@@ -48,6 +48,31 @@
     </div>
 </div>
 
+<!-- Mark Leave Modal -->
+<div id="markLeaveModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+    <div class="glass-card w-full max-w-sm mx-auto p-8 relative">
+        <button onclick="document.getElementById('markLeaveModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 focus:outline-none transition-colors">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center mb-4 text-orange-600">
+            <i class="fa-solid fa-calendar-times text-2xl mr-3"></i>
+            <h3 class="text-xl font-bold text-gray-900 border-b pb-2 w-full">Mark Leave Date</h3>
+        </div>
+        <p id="leaveDoctorName" class="text-sm font-semibold text-gray-600 mb-6 bg-orange-50 p-2 rounded-lg border border-orange-100"></p>
+        <form id="leaveForm" action="" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Select Date of Leave</label>
+                <input type="date" name="leave_date" required class="form-input w-full rounded-xl border-gray-300 shadow-sm px-4 py-3 bg-gray-50 text-gray-900 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            <div class="pt-4 text-right">
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl shadow-lg transform hover:-translate-y-0.5 transition-all focus:outline-none flex justify-center items-center">
+                    <i class="fa-solid fa-check-circle mr-2"></i> Confirm Leave
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Doctor Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
     {% for doctor in doctors %}
@@ -68,6 +93,9 @@
                 <span class="truncate">{{ doctor.Email }}</span>
             </div>
             <div class="flex justify-end space-x-2 border-t border-gray-50 pt-2">
+                <button onclick="openLeaveModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}')" class="text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-3 py-1 text-sm rounded transition-colors" title="Mark Schedule Leave">
+                    <i class="fa-solid fa-calendar-times"></i> Leave
+                </button>
                 <button onclick="openEditModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}', '{{ doctor.Specialization }}', '{{ doctor.ContactNumber }}', '{{ doctor.Email }}')" class="text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-500 px-3 py-1 text-sm rounded transition-colors">
                     <i class="fa-solid fa-pen"></i> Edit
                 </button>
@@ -88,6 +116,12 @@
 </div>
 
 <script>
+function openLeaveModal(id, fname, lname) {
+    document.getElementById('leaveDoctorName').innerHTML = "<i class='fa-solid fa-user-md mr-2'></i> Dr. " + fname + " " + lname;
+    document.getElementById('leaveForm').action = "/doctors/leave/" + id;
+    document.getElementById('markLeaveModal').classList.remove('hidden');
+}
+
 function openAddModal() {
     document.getElementById('modalTitle').innerText = 'Onboard New Doctor';
     document.getElementById('doctorForm').action = "{{ url_for('manage_doctors') }}";
