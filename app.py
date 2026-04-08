@@ -18,7 +18,7 @@ def login():
         user = request.form.get('username')
         pwd = request.form.get('password')
         # Fast presentation credentials
-        if user == 'admin' and pwd == 'password123':
+        if user == 'omkar_maindad' and pwd == 'Omkar@2006':
             session['logged_in'] = True
             flash('Secure access granted.', 'success')
             return redirect(url_for('index'))
