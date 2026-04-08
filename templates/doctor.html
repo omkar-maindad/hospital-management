@@ -71,7 +71,7 @@
                 <button onclick="openEditModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}', '{{ doctor.Specialization }}', '{{ doctor.ContactNumber }}', '{{ doctor.Email }}')" class="text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-500 px-3 py-1 text-sm rounded transition-colors">
                     <i class="fa-solid fa-pen"></i> Edit
                 </button>
-                <form action="{{ url_for('delete_doctor', id=doctor.DoctorID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this Doctor? This clears all data and stops future appointments.');">
+                <form action="{{ url_for('delete_doctor', id=doctor.DoctorID) }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('WARNING: Permanently delete this Doctor? This clears all data and stops future appointments.', this);">
                     <button type="submit" class="text-red-600 hover:text-white bg-red-50 hover:bg-red-500 px-3 py-1 text-sm rounded transition-colors">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>

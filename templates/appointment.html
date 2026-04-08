@@ -118,7 +118,7 @@
                                     <i class="fa-solid fa-check"></i>
                                 </button>
                             </form>
-                            <form action="{{ url_for('manage_appointments') }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to Cancel this appointment?');">
+                            <form action="{{ url_for('manage_appointments') }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('Are you sure you want to Cancel this appointment?', this);">
                                 <input type="hidden" name="update_status" value="1">
                                 <input type="hidden" name="appointment_id" value="{{ apt.AppointmentID }}">
                                 <input type="hidden" name="status" value="Cancelled">
@@ -127,7 +127,7 @@
                                 </button>
                             </form>
                             {% endif %}
-                            <form action="{{ url_for('delete_appointment', id=apt.AppointmentID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this appointment record completely?');">
+                            <form action="{{ url_for('delete_appointment', id=apt.AppointmentID) }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('WARNING: Permanently delete this appointment record completely?', this);">
                                 <button type="submit" class="text-red-600 hover:text-red-800 font-medium text-sm border border-red-200 bg-red-50 px-2 py-1 rounded transition-colors" title="Delete">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>

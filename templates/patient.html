@@ -94,7 +94,7 @@
                         <button onclick="openEditModal('{{ patient.PatientID }}', '{{ patient.FirstName }}', '{{ patient.LastName }}', '{{ patient.DOB }}', '{{ patient.Gender }}', '{{ patient.ContactNumber }}', '{{ patient.Address|replace('\n',' ') }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <form action="{{ url_for('delete_patient', id=patient.PatientID) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete this patient? All history, bills, and appointments tied to them will also vanish!');">
+                        <form action="{{ url_for('delete_patient', id=patient.PatientID) }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('Are you sure you want to permanently delete this patient? All history, bills, and appointments tied to them will also vanish!', this);">
                             <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded transition-colors">
                                 <i class="fa-solid fa-trash"></i>
                             </button>

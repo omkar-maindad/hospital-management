@@ -72,7 +72,7 @@
             <button onclick='openEditModal({{ record.RecordID|tojson|safe }}, {{ record.Diagnosis|tojson|safe }}, {{ record.Treatment|tojson|safe }})' class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors" title="Edit">
                 <i class="fa-solid fa-pen"></i>
             </button>
-            <form action="{{ url_for('delete_history', id=record.RecordID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this Medical Record? This cannot be undone.');">
+            <form action="{{ url_for('delete_history', id=record.RecordID) }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('WARNING: Permanently delete this Medical Record? This cannot be undone.', this);">
                 <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded transition-colors" title="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
