@@ -6,6 +6,33 @@
     <h2 class="text-2xl font-bold text-gray-800">Billing & Invoices</h2>
 </div>
 
+<!-- Edit Billing Modal -->
+<div id="editBillModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+    <div class="glass-card w-full max-w-sm mx-auto p-8 relative">
+        <button type="button" onclick="document.getElementById('editBillModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <h3 class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Edit Invoice</h3>
+        <form id="editBillForm" action="" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Amount (₹)</label>
+                <input type="number" step="0.01" name="amount" id="e_amount" required class="w-full rounded-xl border-gray-300 shadow-sm px-4 py-2 bg-gray-50">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Payment Status</label>
+                <select name="status" id="e_status" required class="w-full rounded-xl border-gray-300 shadow-sm px-4 py-2 bg-gray-50">
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="pt-4 text-right">
+                <button type="submit" class="btn-primary w-full shadow-lg">Update Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Bills Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for bill in bills %}
@@ -50,6 +77,17 @@
                 <i class="fa-solid fa-check-circle mr-2"></i> Payment Completed
             </button>
             {% endif %}
+            
+            <div class="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-100">
+                <button onclick="openEditBillModal('{{ bill.BillID }}', '{{ bill.Amount }}', '{{ bill.PaymentStatus }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 text-sm rounded transition-colors">
+                    <i class="fa-solid fa-pen mr-1"></i> Edit
+                </button>
+                <form action="{{ url_for('delete_billing', id=bill.BillID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Are you sure you want to permanently delete Invoice #{{ bill.BillID }}? This action is irreversible.');">
+                    <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 text-sm rounded transition-colors">
+                        <i class="fa-solid fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
     {% else %}
@@ -62,4 +100,14 @@
     </div>
     {% endfor %}
 </div>
+</div>
+
+<script>
+function openEditBillModal(id, amount, status) {
+    document.getElementById('editBillForm').action = "/billing/edit/" + id;
+    document.getElementById('e_amount').value = parseFloat(amount).toFixed(2);
+    document.getElementById('e_status').value = status;
+    document.getElementById('editBillModal').classList.remove('hidden');
+}
+</script>
 {% endblock %}

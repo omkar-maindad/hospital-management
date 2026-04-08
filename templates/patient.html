@@ -4,7 +4,7 @@
 {% block content %}
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Patient Management</h2>
-    <button onclick="document.getElementById('addPatientModal').classList.remove('hidden')" class="btn-primary text-sm shadow-md">
+    <button onclick="openAddModal()" class="btn-primary text-sm shadow-md">
         <i class="fa-solid fa-plus mr-2"></i> Add Patient
     </button>
 </div>
@@ -15,26 +15,26 @@
         <button onclick="document.getElementById('addPatientModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h3 class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Register New Patient</h3>
-        <form action="{{ url_for('manage_patients') }}" method="POST" class="space-y-4">
+        <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Register New Patient</h3>
+        <form id="patientForm" action="{{ url_for('manage_patients') }}" method="POST" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input type="text" name="first_name" required class="form-input">
+                    <input type="text" name="first_name" id="fname" required class="form-input">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input type="text" name="last_name" required class="form-input">
+                    <input type="text" name="last_name" id="lname" required class="form-input">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input type="date" name="dob" required class="form-input">
+                    <input type="date" name="dob" id="dob" required class="form-input">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                    <select name="gender" required class="form-input bg-white">
+                    <select name="gender" id="gender" required class="form-input bg-white">
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
@@ -43,14 +43,14 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                <input type="text" name="contact" required class="form-input">
+                <input type="text" name="contact" id="contact" required class="form-input">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea name="address" rows="3" class="form-input"></textarea>
+                <textarea name="address" id="address" rows="3" class="form-input"></textarea>
             </div>
             <div class="pt-4 text-right">
-                <button type="submit" class="btn-primary w-full shadow-lg">Register Patient</button>
+                <button type="submit" id="submitBtn" class="btn-primary w-full shadow-lg">Register Patient</button>
             </div>
         </form>
     </div>
@@ -71,6 +71,7 @@
                     <th>Gender</th>
                     <th>Contact</th>
                     <th>Registered At</th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -89,14 +90,49 @@
                     </td>
                     <td>{{ patient.ContactNumber }}</td>
                     <td class="text-gray-500 text-sm">{{ patient.CreatedAt.strftime('%Y-%m-%d %H:%M') if patient.CreatedAt else 'N/A' }}</td>
+                    <td class="space-x-2 text-right">
+                        <button onclick="openEditModal('{{ patient.PatientID }}', '{{ patient.FirstName }}', '{{ patient.LastName }}', '{{ patient.DOB }}', '{{ patient.Gender }}', '{{ patient.ContactNumber }}', '{{ patient.Address|replace('\n',' ') }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <form action="{{ url_for('delete_patient', id=patient.PatientID) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete this patient? All history, bills, and appointments tied to them will also vanish!');">
+                            <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-8 text-gray-500 italic">No patients registered yet.</td>
+                    <td colspan="7" class="text-center py-8 text-gray-500 italic">No patients registered yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Register New Patient';
+    document.getElementById('patientForm').action = "{{ url_for('manage_patients') }}";
+    document.getElementById('submitBtn').innerText = 'Register Patient';
+    document.getElementById('patientForm').reset();
+    document.getElementById('addPatientModal').classList.remove('hidden');
+}
+
+function openEditModal(id, fname, lname, dob, gender, contact, address) {
+    document.getElementById('modalTitle').innerText = 'Edit Patient Details';
+    document.getElementById('patientForm').action = "/patients/edit/" + id;
+    document.getElementById('submitBtn').innerText = 'Update Patient';
+    
+    document.getElementById('fname').value = fname;
+    document.getElementById('lname').value = lname;
+    document.getElementById('dob').value = dob;
+    document.getElementById('gender').value = gender;
+    document.getElementById('contact').value = contact;
+    document.getElementById('address').value = address;
+    
+    document.getElementById('addPatientModal').classList.remove('hidden');
+}
+</script>
 {% endblock %}

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="mb-8 flex justify-between items-center">
     <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Patient Medical History</h2>
-    <button onclick="document.getElementById('addHistoryModal').classList.remove('hidden')" class="btn-primary flex items-center shadow-lg transition-transform transform hover:-translate-y-1">
+    <button onclick="openAddModal()" class="btn-primary flex items-center shadow-lg transition-transform transform hover:-translate-y-1">
         <i class="fa-solid fa-file-medical mr-2"></i> Add Record
     </button>
 </div>
@@ -19,11 +19,11 @@
             <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
                 <i class="fa-solid fa-stethoscope"></i>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800">New Clinical Record</h3>
+            <h3 id="modalTitle" class="text-2xl font-bold text-gray-800">New Clinical Record</h3>
         </div>
         
-        <form action="{{ url_for('view_history') }}" method="POST" class="space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form id="historyForm" action="{{ url_for('view_history') }}" method="POST" class="space-y-5">
+            <div id="dropdownsRow" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Select Patient</label>
                     <select name="patient_id" required class="form-input bg-white/80 focus:bg-white transition-colors">
@@ -46,16 +46,16 @@
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Diagnosis Notes</label>
-                <textarea name="diagnosis" rows="3" required class="form-input bg-white/80 focus:bg-white transition-colors" placeholder="Detailed clinical diagnosis..."></textarea>
+                <textarea name="diagnosis" id="diag" rows="3" required class="form-input bg-white/80 focus:bg-white transition-colors" placeholder="Detailed clinical diagnosis..."></textarea>
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Prescribed Treatment</label>
-                <textarea name="treatment" rows="3" required class="form-input bg-white/80 focus:bg-white transition-colors" placeholder="Medications, therapies, instructions..."></textarea>
+                <textarea name="treatment" id="treat" rows="3" required class="form-input bg-white/80 focus:bg-white transition-colors" placeholder="Medications, therapies, instructions..."></textarea>
             </div>
             
             <div class="pt-4 border-t border-gray-100 mt-6 text-right">
-                <button type="submit" class="btn-primary w-full md:w-auto px-8 shadow-xl hover:shadow-indigo-500/30">Save Clinical Record</button>
+                <button type="submit" id="submitBtn" class="btn-primary w-full md:w-auto px-8 shadow-xl hover:shadow-indigo-500/30">Save Clinical Record</button>
             </div>
         </form>
     </div>
@@ -67,6 +67,17 @@
     <div class="glass-card relative overflow-hidden group hover:border-indigo-300 transition-all duration-300">
         <!-- Accent bar -->
         <div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-400 to-purple-500"></div>
+        
+        <div class="absolute top-4 right-4 flex space-x-3 opacity-80 hover:opacity-100">
+            <button onclick='openEditModal({{ record.RecordID|tojson|safe }}, {{ record.Diagnosis|tojson|safe }}, {{ record.Treatment|tojson|safe }})' class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <form action="{{ url_for('delete_history', id=record.RecordID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this Medical Record? This cannot be undone.');">
+                <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded transition-colors" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </form>
+        </div>
         
         <div class="p-6 pl-8 flex flex-col md:flex-row gap-6">
             <!-- Patient / Doc Info -->
@@ -114,6 +125,31 @@
         <h3 class="text-xl font-bold text-gray-800">No Clinical Records Yet</h3>
         <p class="text-gray-500 mt-2 max-w-sm mx-auto">Start by adding a diagnosis and treatment plan for a patient.</p>
     </div>
+    </div>
     {% endfor %}
 </div>
+
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'New Clinical Record';
+    document.getElementById('historyForm').action = "{{ url_for('view_history') }}";
+    document.getElementById('submitBtn').innerText = 'Save Clinical Record';
+    document.getElementById('dropdownsRow').classList.remove('hidden');
+    document.getElementById('historyForm').reset();
+    document.getElementById('addHistoryModal').classList.remove('hidden');
+}
+
+function openEditModal(id, diag, treat) {
+    document.getElementById('modalTitle').innerText = 'Edit Clinical Record';
+    document.getElementById('historyForm').action = "/history/edit/" + id;
+    document.getElementById('submitBtn').innerText = 'Update Record';
+    
+    document.getElementById('dropdownsRow').classList.add('hidden');
+    
+    document.getElementById('diag').value = diag;
+    document.getElementById('treat').value = treat;
+    
+    document.getElementById('addHistoryModal').classList.remove('hidden');
+}
+</script>
 {% endblock %}

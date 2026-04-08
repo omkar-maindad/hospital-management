@@ -4,7 +4,7 @@
 {% block content %}
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Doctor Directory</h2>
-    <button onclick="document.getElementById('addDoctorModal').classList.remove('hidden')" class="btn-primary text-sm shadow-md">
+    <button onclick="openAddModal()" class="btn-primary text-sm shadow-md">
         <i class="fa-solid fa-plus mr-2"></i> Add Doctor
     </button>
 </div>
@@ -15,34 +15,34 @@
         <button onclick="document.getElementById('addDoctorModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h3 class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Onboard New Doctor</h3>
-        <form action="{{ url_for('manage_doctors') }}" method="POST" class="space-y-4">
+        <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Onboard New Doctor</h3>
+        <form id="doctorForm" action="{{ url_for('manage_doctors') }}" method="POST" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input type="text" name="first_name" required class="form-input">
+                    <input type="text" name="first_name" id="fname" required class="form-input">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input type="text" name="last_name" required class="form-input">
+                    <input type="text" name="last_name" id="lname" required class="form-input">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
-                <input type="text" name="specialization" placeholder="e.g. Cardiologist" required class="form-input">
+                <input type="text" name="specialization" id="spec" placeholder="e.g. Cardiologist" required class="form-input">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                    <input type="text" name="contact" required class="form-input">
+                    <input type="text" name="contact" id="contact" required class="form-input">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input type="email" name="email" required class="form-input">
+                    <input type="email" name="email" id="email" required class="form-input">
                 </div>
             </div>
             <div class="pt-4 text-right">
-                <button type="submit" class="btn-primary w-full shadow-lg">Save Doctor</button>
+                <button type="submit" id="submitBtn" class="btn-primary w-full shadow-lg">Save Doctor</button>
             </div>
         </form>
     </div>
@@ -63,9 +63,19 @@
                 <i class="fa-solid fa-phone w-5 min-w-5 text-gray-400"></i>
                 <span>{{ doctor.ContactNumber }}</span>
             </div>
-            <div class="flex items-center text-sm text-gray-600">
+            <div class="flex items-center text-sm text-gray-600 mb-3">
                 <i class="fa-solid fa-envelope w-5 min-w-5 text-gray-400"></i>
                 <span class="truncate">{{ doctor.Email }}</span>
+            </div>
+            <div class="flex justify-end space-x-2 border-t border-gray-50 pt-2">
+                <button onclick="openEditModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}', '{{ doctor.Specialization }}', '{{ doctor.ContactNumber }}', '{{ doctor.Email }}')" class="text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-500 px-3 py-1 text-sm rounded transition-colors">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <form action="{{ url_for('delete_doctor', id=doctor.DoctorID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this Doctor? This clears all data and stops future appointments.');">
+                    <button type="submit" class="text-red-600 hover:text-white bg-red-50 hover:bg-red-500 px-3 py-1 text-sm rounded transition-colors">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -75,4 +85,29 @@
     </div>
     {% endfor %}
 </div>
+</div>
+
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Onboard New Doctor';
+    document.getElementById('doctorForm').action = "{{ url_for('manage_doctors') }}";
+    document.getElementById('submitBtn').innerText = 'Save Doctor';
+    document.getElementById('doctorForm').reset();
+    document.getElementById('addDoctorModal').classList.remove('hidden');
+}
+
+function openEditModal(id, fname, lname, spec, contact, email) {
+    document.getElementById('modalTitle').innerText = 'Edit Doctor Profile';
+    document.getElementById('doctorForm').action = "/doctors/edit/" + id;
+    document.getElementById('submitBtn').innerText = 'Update Doctor';
+    
+    document.getElementById('fname').value = fname;
+    document.getElementById('lname').value = lname;
+    document.getElementById('spec').value = spec;
+    document.getElementById('contact').value = contact;
+    document.getElementById('email').value = email;
+    
+    document.getElementById('addDoctorModal').classList.remove('hidden');
+}
+</script>
 {% endblock %}

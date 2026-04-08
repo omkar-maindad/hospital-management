@@ -4,7 +4,7 @@
 {% block content %}
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Appointments Schedule</h2>
-    <button onclick="document.getElementById('addAppointmentModal').classList.remove('hidden')" class="btn-primary text-sm shadow-md">
+    <button onclick="openAddModal()" class="btn-primary text-sm shadow-md">
         <i class="fa-solid fa-calendar-plus mr-2"></i> Book Appointment
     </button>
 </div>
@@ -15,14 +15,14 @@
         <button onclick="document.getElementById('addAppointmentModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h3 class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Schedule Appointment</h3>
+        <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-6 border-b pb-2">Schedule Appointment</h3>
         
-        <form action="{{ url_for('manage_appointments') }}" method="POST" class="space-y-4">
-            <input type="hidden" name="book" value="1">
+        <form id="apptForm" action="{{ url_for('manage_appointments') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="book" id="bookFlag" value="1">
             
-            <div>
+            <div id="patientSelector">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Select Patient</label>
-                <select name="patient_id" required class="form-input bg-white">
+                <select name="patient_id" id="patient_id" required class="form-input bg-white">
                     <option value="" disabled selected>-- Choose Patient --</option>
                     {% for p in patients %}
                         <option value="{{ p.PatientID }}">{{ p.FirstName }} {{ p.LastName }} (ID: {{ p.PatientID }})</option>
@@ -30,9 +30,9 @@
                 </select>
             </div>
             
-            <div>
+            <div id="doctorSelector">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Select Doctor</label>
-                <select name="doctor_id" required class="form-input bg-white">
+                <select name="doctor_id" id="doctor_id" required class="form-input bg-white">
                     <option value="" disabled selected>-- Choose Doctor --</option>
                     {% for d in doctors %}
                         <option value="{{ d.DoctorID }}">Dr. {{ d.FirstName }} {{ d.LastName }} - {{ d.Specialization }}</option>
@@ -43,11 +43,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" name="date" required class="form-input">
+                    <input type="date" name="date" id="date" required class="form-input">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                    <input type="time" name="time" required class="form-input">
+                    <input type="time" name="time" id="time" required class="form-input">
                 </div>
             </div>
             
@@ -58,7 +58,7 @@
             </div>
 
             <div class="pt-2 text-right">
-                <button type="submit" class="btn-primary w-full shadow-lg">Confirm Booking</button>
+                <button type="submit" id="submitBtn" class="btn-primary w-full shadow-lg">Confirm Booking</button>
             </div>
         </form>
     </div>
@@ -105,16 +105,34 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if apt.Status == 'Scheduled' %}
-                        <form action="{{ url_for('manage_appointments') }}" method="POST" class="inline">
-                            <input type="hidden" name="update_status" value="1">
-                            <input type="hidden" name="appointment_id" value="{{ apt.AppointmentID }}">
-                            <input type="hidden" name="status" value="Completed">
-                            <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-medium text-sm border border-emerald-200 bg-emerald-50 px-3 py-1 rounded transition-colors" title="Mark as Completed">
-                                <i class="fa-solid fa-check"></i> Complete
+                        <div class="flex flex-wrap gap-1">
+                            {% if apt.Status == 'Scheduled' %}
+                            <button onclick="openEditModal('{{ apt.AppointmentID }}', '{{ apt.AppointmentDate }}', '{{ apt.AppointmentTime }}')" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded text-sm transition-colors" title="Reschedule">
+                                <i class="fa-solid fa-pen"></i>
                             </button>
-                        </form>
-                        {% endif %}
+                            <form action="{{ url_for('manage_appointments') }}" method="POST" class="inline">
+                                <input type="hidden" name="update_status" value="1">
+                                <input type="hidden" name="appointment_id" value="{{ apt.AppointmentID }}">
+                                <input type="hidden" name="status" value="Completed">
+                                <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-medium text-sm border border-emerald-200 bg-emerald-50 px-2 py-1 rounded transition-colors" title="Mark as Completed">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('manage_appointments') }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to Cancel this appointment?');">
+                                <input type="hidden" name="update_status" value="1">
+                                <input type="hidden" name="appointment_id" value="{{ apt.AppointmentID }}">
+                                <input type="hidden" name="status" value="Cancelled">
+                                <button type="submit" class="text-yellow-600 hover:text-yellow-800 font-medium text-sm border border-yellow-200 bg-yellow-50 px-2 py-1 rounded transition-colors" title="Cancel Appointment">
+                                    <i class="fa-solid fa-ban"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form action="{{ url_for('delete_appointment', id=apt.AppointmentID) }}" method="POST" class="inline" onsubmit="return confirm('WARNING: Permanently delete this appointment record completely?');">
+                                <button type="submit" class="text-red-600 hover:text-red-800 font-medium text-sm border border-red-200 bg-red-50 px-2 py-1 rounded transition-colors" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% else %}
@@ -126,4 +144,37 @@
         </table>
     </div>
 </div>
+
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Schedule Appointment';
+    document.getElementById('apptForm').action = "{{ url_for('manage_appointments') }}";
+    document.getElementById('submitBtn').innerText = 'Confirm Booking';
+    document.getElementById('bookFlag').disabled = false;
+    document.getElementById('patientSelector').classList.remove('hidden');
+    document.getElementById('doctorSelector').classList.remove('hidden');
+    document.getElementById('patient_id').required = true;
+    document.getElementById('doctor_id').required = true;
+    document.getElementById('apptForm').reset();
+    document.getElementById('addAppointmentModal').classList.remove('hidden');
+}
+
+function openEditModal(id, date, time) {
+    document.getElementById('modalTitle').innerText = 'Reschedule Appointment';
+    document.getElementById('apptForm').action = "/appointments/edit/" + id;
+    document.getElementById('submitBtn').innerText = 'Reschedule';
+    
+    // Disable irrelevant fields for reschedule
+    document.getElementById('bookFlag').disabled = true;
+    document.getElementById('patientSelector').classList.add('hidden');
+    document.getElementById('doctorSelector').classList.add('hidden');
+    document.getElementById('patient_id').required = false;
+    document.getElementById('doctor_id').required = false;
+
+    document.getElementById('date').value = date;
+    document.getElementById('time').value = time;
+    
+    document.getElementById('addAppointmentModal').classList.remove('hidden');
+}
+</script>
 {% endblock %}
