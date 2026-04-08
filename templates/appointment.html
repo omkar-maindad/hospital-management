@@ -84,7 +84,7 @@
             <tbody>
                 {% for apt in appointments %}
                 <tr>
-                    <td class="font-medium text-gray-500">#{{ apt.AppointmentID }}</td>
+                    <td class="font-medium text-gray-500">{{ loop.index }}</td>
                     <td class="font-semibold text-gray-800">{{ apt.PName }} {{ apt.PLName }}</td>
                     <td>Dr. {{ apt.DName }} {{ apt.DLName }}</td>
                     <td>

@@ -77,7 +77,7 @@
             <tbody>
                 {% for patient in patients %}
                 <tr>
-                    <td class="font-medium">#{{ patient.PatientID }}</td>
+                    <td class="font-medium">{{ loop.index }}</td>
                     <td>
                         <div class="font-semibold text-gray-900">{{ patient.FirstName }} {{ patient.LastName }}</div>
                         <div class="text-xs text-gray-500">{{ patient.Address[:30] + '...' if patient.Address else 'No address' }}</div>
