@@ -47,7 +47,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea name="address" id="address" rows="3" class="form-input"></textarea>
+                <textarea name="address" id="address" rows="3" class="form-input" required></textarea>
             </div>
             <div class="pt-4 text-right">
                 <button type="submit" id="submitBtn" class="btn-primary w-full shadow-lg">Register Patient</button>
@@ -58,8 +58,14 @@
 
 <!-- Patient List Table -->
 <div class="glass-card mt-6">
-    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 rounded-t-xl">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 rounded-t-xl flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">Registered Patients</h3>
+        <div class="relative w-64">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+            </div>
+            <input type="text" id="patientSearch" onkeyup="windowSearch('patientSearch', '.searchable-row')" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Search patients...">
+        </div>
     </div>
     <div class="table-container">
         <table class="styled-table">
@@ -68,6 +74,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>DOB</th>
+                    <th>Age</th>
                     <th>Gender</th>
                     <th>Contact</th>
                     <th>Registered At</th>
@@ -76,13 +83,14 @@
             </thead>
             <tbody>
                 {% for patient in patients %}
-                <tr>
+                <tr class="searchable-row hover:bg-gray-50 border-b border-gray-100 transition-colors bg-white">
                     <td class="font-medium">{{ loop.index }}</td>
                     <td>
                         <div class="font-semibold text-gray-900">{{ patient.FirstName }} {{ patient.LastName }}</div>
                         <div class="text-xs text-gray-500">{{ patient.Address[:30] + '...' if patient.Address else 'No address' }}</div>
                     </td>
                     <td>{{ patient.DOB }}</td>
+                    <td class="font-bold text-gray-500">{{ patient.Age }} yrs</td>
                     <td>
                         <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
                             {{ patient.Gender }}
@@ -91,7 +99,7 @@
                     <td>{{ patient.ContactNumber }}</td>
                     <td class="text-gray-500 text-sm">{{ patient.CreatedAt.strftime('%Y-%m-%d %H:%M') if patient.CreatedAt else 'N/A' }}</td>
                     <td class="space-x-2 text-right">
-                        <button onclick="openEditModal('{{ patient.PatientID }}', '{{ patient.FirstName }}', '{{ patient.LastName }}', '{{ patient.DOB }}', '{{ patient.Gender }}', '{{ patient.ContactNumber }}', '{{ patient.Address|replace('\n',' ') }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors">
+                        <button onclick="openEditModal('{{ patient.PatientID }}', '{{ patient.FirstName }}', '{{ patient.LastName }}', '{{ patient.DOB }}', '{{ patient.Gender }}', '{{ patient.ContactNumber }}', `{{ patient.Address | replace('\n', ' ') | replace('\r', '') }}`)" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded transition-colors">
                             <i class="fa-solid fa-pen"></i>
                         </button>
                         <form action="{{ url_for('delete_patient', id=patient.PatientID) }}" method="POST" class="inline" onsubmit="event.preventDefault(); openConfirmModal('Are you sure you want to permanently delete this patient? All history, bills, and appointments tied to them will also vanish!', this);">

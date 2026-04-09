@@ -2,6 +2,9 @@
 {% block title %}Prescriptions - CareSync{% endblock %}
 
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <div class="mb-8 flex justify-between items-center">
     <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Prescriptions Management</h1>
 </div>
@@ -41,37 +44,80 @@
         <form action="{{ url_for('manage_prescriptions') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Select Appointment</label>
-                <select name="appointment_id" required class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-gray-50">
+                <select name="appointment_id" required class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-gray-50 select2-search">
                     <option value="" disabled selected>Select an Appointment...</option>
                     {% for a in appointments %}
                         <option value="{{ a.AppointmentID }}">#{{ a.AppointmentID }} - {{ a.FirstName }} {{ a.LastName }} (Dr. {{ a.DLastName }})</option>
                     {% endfor %}
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Medication Name</label>
-                <input type="text" name="medication_name" required placeholder="e.g. Paracetamol" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-gray-50">
+            
+            <div id="medicationContainer" class="md:col-span-2 space-y-4">
+                <div class="med-row grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-xl relative bg-gray-50/50">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Medication Name</label>
+                        <input type="text" name="medication_name[]" required placeholder="e.g. Paracetamol" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Dosage</label>
+                        <input type="text" name="dosage[]" required placeholder="e.g. 500mg" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
+                        <input type="text" name="instructions[]" required placeholder="e.g. Twice daily" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Dosage</label>
-                <input type="text" name="dosage" required placeholder="e.g. 500mg" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-gray-50">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
-                <input type="text" name="instructions" required placeholder="e.g. Take twice daily after meals" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-gray-50">
-            </div>
-            <div class="md:col-span-2 mt-2">
-                <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:-translate-y-0.5">
-                    <i class="fa-solid fa-pills mr-2"></i> Issue Prescription
+            
+            <div class="md:col-span-2 mt-2 flex justify-between items-center border-t pt-4">
+                <button type="button" onclick="addMedRow()" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded transition-colors"><i class="fa-solid fa-plus mr-1"></i> Add Medicine</button>
+                <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-pills mr-2"></i> Issue Prescriptions
                 </button>
             </div>
         </form>
     </div>
 </div>
 
+<script>
+$(document).ready(function() {
+    $('.select2-search').select2({
+        width: '100%'
+    });
+});
+
+function addMedRow() {
+    const container = document.getElementById('medicationContainer');
+    const row = document.createElement('div');
+    row.className = 'med-row grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-xl relative bg-gray-50/50 mt-4';
+    row.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" class="absolute -top-3 -right-3 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-full w-8 h-8 flex items-center justify-center shadow transition-colors"><i class="fa-solid fa-xmark"></i></button>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Medication Name</label>
+            <input type="text" name="medication_name[]" required placeholder="e.g. Antibiotic" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Dosage</label>
+            <input type="text" name="dosage[]" required placeholder="e.g. 10ml" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
+            <input type="text" name="instructions[]" required placeholder="e.g. After dinner" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+        </div>
+    `;
+    container.appendChild(row);
+}
+</script>
+
 <div class="mt-8 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-    <div class="px-6 py-5 border-b border-gray-100 bg-gray-50">
+    <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
         <h2 class="text-xl font-bold text-gray-800">Prescription Records</h2>
+        <div class="relative w-64">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+            </div>
+            <input type="text" id="presSearch" onkeyup="windowSearch('presSearch', '.searchable-row')" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Search prescriptions...">
+        </div>
     </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -88,7 +134,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for p in prescriptions %}
-                <tr class="hover:bg-gray-50 transition-colors">
+                <tr class="searchable-row hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
                         {{ p.AppointmentDate }}
                     </td>

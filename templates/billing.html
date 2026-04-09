@@ -71,13 +71,22 @@
 </div>
 
 <!-- Bills Grid -->
+<div class="flex justify-between items-center mb-6 mt-4">
+    <h3 class="text-xl font-bold text-gray-800">Financial Records</h3>
+    <div class="relative w-64">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+        </div>
+        <input type="text" id="billSearch" onkeyup="windowSearch('billSearch', '.searchable-row')" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Search billing records...">
+    </div>
+</div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for bill in bills %}
-    <div class="glass-card flex flex-col pt-6 pb-4 px-6 border-l-4 {{ 'border-l-rose-500' if bill.PaymentStatus == 'Pending' else 'border-l-emerald-500' }}">
+    <div class="searchable-row glass-card flex flex-col pt-6 pb-4 px-6 border-l-4 {{ 'border-l-rose-500' if bill.PaymentStatus == 'Pending' else 'border-l-emerald-500' }}">
         
         <div class="flex justify-between items-start mb-4">
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Invoice #{{ loop.index }}</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Invoice #{{ loop.revindex }}</p>
                 <h3 class="text-lg font-bold text-gray-900 mt-1">{{ bill.FirstName }} {{ bill.LastName }}</h3>
             </div>
             <div>

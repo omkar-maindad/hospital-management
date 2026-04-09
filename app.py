@@ -29,7 +29,7 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('System session terminated securely.', 'success')
+    flash('Logged out successfully', 'success')
     return redirect(url_for('login'))
 
 
@@ -69,7 +69,7 @@ def manage_patients():
             flash('Failed to add patient.', 'error')
         return redirect(url_for('manage_patients'))
         
-    patients = db.fetch_all("SELECT * FROM Patients ORDER BY PatientID ASC")
+    patients = db.fetch_all("SELECT *, TIMESTAMPDIFF(YEAR, DOB, CURDATE()) AS Age FROM Patients ORDER BY PatientID ASC")
     return render_template('patient.html', patients=patients)
 
 @app.route('/patients/edit/<int:id>', methods=['POST'])
@@ -147,18 +147,53 @@ def delete_doctor(id):
 
 @app.route('/doctors/leave/<int:id>', methods=['POST'])
 def mark_doctor_leave(id):
-    leave_date = request.form['leave_date']
-    exists = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (id, leave_date))
-    if exists:
-        flash('Doctor is already marked on leave for this date.', 'error')
-        return redirect(url_for('manage_doctors'))
+    leave_dates_str = request.form['leave_date']
+    leave_dates = [d.strip() for d in leave_dates_str.split(',')]
+    success_count = 0
+    for l_date in leave_dates:
+        if not l_date: continue
+        exists = db.fetch_all("SELECT 1 FROM DoctorLeaves WHERE DoctorID=%s AND LeaveDate=%s", (id, l_date))
+        if not exists:
+            if db.execute_query("INSERT INTO DoctorLeaves (DoctorID, LeaveDate) VALUES (%s, %s)", (id, l_date)):
+                success_count += 1
     
-    query = "INSERT INTO DoctorLeaves (DoctorID, LeaveDate) VALUES (%s, %s)"
-    if db.execute_query(query, (id, leave_date)):
-        flash('Leave scheduled successfully on the calendar.', 'success')
+    if success_count > 0:
+        flash(f'{success_count} leave date(s) scheduled successfully.', 'success')
     else:
-        flash('Failed to schedule leave.', 'error')
+        flash('Failed to schedule leave or dates already marked.', 'error')
     return redirect(url_for('manage_doctors'))
+
+from flask import jsonify
+
+@app.route('/api/doctors/<int:id>/leaves', methods=['GET'])
+def get_doctor_leaves(id):
+    leaves = db.fetch_all("SELECT LeaveID, LeaveDate FROM DoctorLeaves WHERE DoctorID=%s ORDER BY LeaveDate ASC", (id,))
+    return jsonify([{"ID": l["LeaveID"], "Date": l["LeaveDate"].strftime('%Y-%m-%d')} for l in leaves])
+
+@app.route('/doctors/leave/delete/<int:id>', methods=['POST'])
+def delete_doctor_leave(id):
+    if db.execute_query("DELETE FROM DoctorLeaves WHERE LeaveID=%s", (id,)):
+        flash('Leave officially cancelled.', 'success')
+    else:
+        flash('Failed to cancel leave.', 'error')
+    return redirect(url_for('manage_doctors'))
+
+@app.route('/holidays/add', methods=['POST'])
+def add_holiday():
+    dates = request.form['holiday_date'].split(',')
+    success = 0
+    for d in dates:
+        d = d.strip()
+        if not d: continue
+        exists = db.fetch_all("SELECT 1 FROM HospitalHolidays WHERE HolidayDate=%s", (d,))
+        if not exists:
+            if db.execute_query("INSERT INTO HospitalHolidays (HolidayDate) VALUES (%s)", (d,)):
+                success += 1
+    if success > 0:
+        flash(f'{success} hospital closure date(s) marked successfully.', 'success')
+    else:
+        flash('Holiday date already exists.', 'error')
+    return redirect(url_for('manage_appointments'))
 
 # --- Appointments Booking & Management ---
 @app.route('/appointments', methods=['GET', 'POST'])
@@ -171,10 +206,21 @@ def manage_appointments():
             time = request.form['time']
             
             # --- Advanced Pre-Flight Validation ---
+            is_fetch = request.headers.get('Fetch-Api') == 'true'
+
+            h_closed = db.fetch_all("SELECT 1 FROM HospitalHolidays WHERE HolidayDate=%s", (date,))
+            if h_closed:
+                msg = 'Hospital is officially closed on this date. No appointments can be scheduled.'
+                if is_fetch: return jsonify({"status": "error", "message": msg})
+                flash(msg, 'error')
+                return redirect(url_for('manage_appointments'))
+
             from datetime import datetime
             time_obj = datetime.strptime(time, '%H:%M').time()
             if not (datetime.strptime('09:00', '%H:%M').time() <= time_obj <= datetime.strptime('21:00', '%H:%M').time()):
-                flash('Hospital operates strictly from 9 AM to 9 PM. Please select a valid time.', 'error')
+                msg = 'Hospital operates strictly from 9 AM to 9 PM. Please select a valid time.'
+                if is_fetch: return jsonify({"status": "error", "message": msg})
+                flash(msg, 'error')
                 return redirect(url_for('manage_appointments'))
 
             # Check Doctor Leaves
@@ -182,7 +228,9 @@ def manage_appointments():
             if is_on_leave:
                 doc = db.fetch_all("SELECT FirstName, LastName FROM Doctors WHERE DoctorID=%s", (d_id,))
                 d_name = f"{doc[0]['FirstName']} {doc[0]['LastName']}" if doc else ""
-                flash(f'Dr. {d_name} is not available on specified date.', 'error')
+                msg = f'Dr. {d_name} is not available on specified date.'
+                if is_fetch: return jsonify({"status": "error", "message": msg})
+                flash(msg, 'error')
                 return redirect(url_for('manage_appointments'))
 
             # Check 30-Minute Time Collision Lock
@@ -193,14 +241,18 @@ def manage_appointments():
             """, (d_id, date, time))
 
             if collisions:
-                flash('Time slot not available, please select a time slot of after half an hour.', 'error')
+                msg = 'Time slot not available, please select a time slot of after half an hour.'
+                if is_fetch: return jsonify({"status": "error", "message": msg})
+                flash(msg, 'error')
                 return redirect(url_for('manage_appointments'))
             
             # Using our Stored Procedure with ACIDs
             message = db.call_book_appointment_proc(p_id, d_id, date, time)
             if 'Error' in message:
+                if is_fetch: return jsonify({"status": "error", "message": message})
                 flash(message, 'error')
             else:
+                if is_fetch: return jsonify({"status": "success"})
                 flash(message, 'success')
                 
         elif 'update_status' in request.form:
@@ -278,22 +330,29 @@ def delete_appointment(id):
 @app.route('/prescriptions', methods=['GET', 'POST'])
 def manage_prescriptions():
     if request.method == 'POST':
-        appt_id = request.form['appointment_id']
-        med_name = request.form['medication_name']
-        dosage = request.form['dosage']
-        instructions = request.form['instructions']
+        appt_id = request.form.get('appointment_id')
+        med_names = request.form.getlist('medication_name[]')
+        dosages = request.form.getlist('dosage[]')
+        instructions = request.form.getlist('instructions[]')
         
-        # Anti-Duplication Engine
-        duplicate = db.fetch_all("SELECT 1 FROM Prescriptions WHERE AppointmentID=%s AND MedicationName=%s", (appt_id, med_name))
-        if duplicate:
-            flash('ERROR: Exact medication already prescribed for this Appointment.', 'error')
-            return redirect(url_for('manage_prescriptions'))
+        success_count = 0
+        for i in range(len(med_names)):
+            m_name = med_names[i].strip()
+            if not m_name: continue
             
-        query = "INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) VALUES (%s, %s, %s, %s)"
-        if db.execute_query(query, (appt_id, med_name, dosage, instructions)):
-            flash('Prescription added successfully!', 'success')
+            # Anti-Duplication Engine
+            duplicate = db.fetch_all("SELECT 1 FROM Prescriptions WHERE AppointmentID=%s AND MedicationName=%s", (appt_id, m_name))
+            if duplicate:
+                continue
+                
+            query = "INSERT INTO Prescriptions (AppointmentID, MedicationName, Dosage, Instructions) VALUES (%s, %s, %s, %s)"
+            if db.execute_query(query, (appt_id, m_name, dosages[i], instructions[i])):
+                success_count += 1
+                
+        if success_count > 0:
+            flash(f'{success_count} medication(s) prescribed successfully!', 'success')
         else:
-            flash('Failed to add prescription.', 'error')
+            flash('Failed to add meds or exact medications already prescribed for this visit.', 'error')
         return redirect(url_for('manage_prescriptions'))
         
     prescriptions = db.fetch_all('''

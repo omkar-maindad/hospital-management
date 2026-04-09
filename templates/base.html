@@ -179,11 +179,22 @@
 
         document.getElementById('confirmModalApproveBtn').addEventListener('click', () => {
             if (currentFormToSubmit) {
-                // Disable button to prevent double-clicks
                 document.getElementById('confirmModalApproveBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Processing...';
                 currentFormToSubmit.submit();
             }
         });
+
+        function windowSearch(inputId, searchableClass) {
+            let query = document.getElementById(inputId).value.toLowerCase();
+            let targets = document.querySelectorAll(searchableClass);
+            targets.forEach(t => {
+                if (t.innerText.toLowerCase().includes(query)) {
+                    t.style.display = '';
+                } else {
+                    t.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>

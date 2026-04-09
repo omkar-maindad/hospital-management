@@ -2,6 +2,8 @@
 {% block title %}Doctors | CareSync{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Doctor Directory</h2>
     <button onclick="openAddModal()" class="btn-primary text-sm shadow-md">
@@ -61,8 +63,8 @@
         <p id="leaveDoctorName" class="text-sm font-semibold text-gray-600 mb-6 bg-orange-50 p-2 rounded-lg border border-orange-100"></p>
         <form id="leaveForm" action="" method="POST" class="space-y-4">
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Select Date of Leave</label>
-                <input type="date" name="leave_date" required class="form-input w-full rounded-xl border-gray-300 shadow-sm px-4 py-3 bg-gray-50 text-gray-900 focus:ring-orange-500 focus:border-orange-500">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Select Dates of Leave</label>
+                <input type="text" id="multiDatePicker" name="leave_date" required class="form-input w-full rounded-xl border-gray-300 shadow-sm px-4 py-3 bg-gray-50 text-gray-900 focus:ring-orange-500 focus:border-orange-500" placeholder="Select one or multiple dates...">
             </div>
             <div class="pt-4 text-right">
                 <button type="submit" class="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl shadow-lg transform hover:-translate-y-0.5 transition-all focus:outline-none flex justify-center items-center">
@@ -73,10 +75,38 @@
     </div>
 </div>
 
+<!-- View/Cancel Leaves Modal -->
+<div id="viewLeavesModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+    <div class="glass-card w-full max-w-lg mx-auto p-8 relative">
+        <button onclick="document.getElementById('viewLeavesModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 focus:outline-none transition-colors">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center mb-4 text-blue-600">
+            <i class="fa-solid fa-calendar-check text-2xl mr-3"></i>
+            <h3 class="text-xl font-bold text-gray-900 border-b pb-2 w-full">Currently Scheduled Leaves</h3>
+        </div>
+        <p id="viewLeavesDoctorName" class="text-sm font-semibold text-gray-600 mb-4 bg-blue-50 p-2 rounded-lg border border-blue-100"></p>
+        <div id="leavesContainer" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+</div>
+
+<!-- Doctor Grid Header with Search -->
+<div class="flex justify-between items-end mt-6 border-b border-gray-200 pb-2">
+    <h3 class="text-xl font-bold text-gray-800">Doctor Roster</h3>
+    <div class="relative w-72">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fa-solid fa-user-doctor text-gray-400"></i>
+        </div>
+        <input type="text" id="docSearch" onkeyup="windowSearch('docSearch', '.searchable-row')" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full text-sm focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" placeholder="Search roster...">
+    </div>
+</div>
+
 <!-- Doctor Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
     {% for doctor in doctors %}
-    <div class="glass-card flex flex-col pt-6 pb-4 px-6 text-center shadow-lg border-t-4 border-t-indigo-500">
+    <div class="searchable-row glass-card flex flex-col pt-6 pb-4 px-6 text-center shadow-lg border-t-4 border-t-indigo-500">
         <div class="w-20 h-20 mx-auto rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 border-4 border-white shadow-sm mb-4">
             <i class="fa-solid fa-user-md text-3xl"></i>
         </div>
@@ -93,6 +123,9 @@
                 <span class="truncate">{{ doctor.Email }}</span>
             </div>
             <div class="flex justify-end space-x-2 border-t border-gray-50 pt-2">
+                <button type="button" onclick="openViewLeavesModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}')" class="text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-500 px-3 py-1 text-sm rounded transition-colors" title="View Leaves Info">
+                    <i class="fa-solid fa-list"></i> Info
+                </button>
                 <button onclick="openLeaveModal('{{ doctor.DoctorID }}', '{{ doctor.FirstName }}', '{{ doctor.LastName }}')" class="text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-3 py-1 text-sm rounded transition-colors" title="Mark Schedule Leave">
                     <i class="fa-solid fa-calendar-times"></i> Leave
                 </button>
@@ -116,6 +149,41 @@
 </div>
 
 <script>
+flatpickr("#multiDatePicker", {
+    mode: "multiple",
+    dateFormat: "Y-m-d"
+});
+
+async function openViewLeavesModal(id, fname, lname) {
+    document.getElementById('viewLeavesDoctorName').innerHTML = "<i class='fa-solid fa-user-md mr-2'></i> Dr. " + fname + " " + lname;
+    document.getElementById('viewLeavesModal').classList.remove('hidden');
+    let container = document.getElementById('leavesContainer');
+    container.innerHTML = '<p class="text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin"></i> Fetching records...</p>';
+    
+    try {
+        let res = await fetch(`/api/doctors/${id}/leaves`);
+        let leaves = await res.json();
+        
+        if (leaves.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-600 italic text-center p-4">No leaves scheduled.</p>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        leaves.forEach(l => {
+            container.innerHTML += `
+            <div class="flex justify-between items-center bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                <span class="font-bold text-gray-800"><i class="fa-solid fa-calendar-day mr-2 text-indigo-500"></i> ${l.Date}</span>
+                <form action="/doctors/leave/delete/${l.ID}" method="POST" class="inline m-0" onsubmit="return confirm('Cancel this scheduled leave?');">
+                    <button type="submit" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 text-xs rounded-full font-bold transition-colors"><i class="fa-solid fa-xmark mr-1"></i> Cancel</button>
+                </form>
+            </div>`;
+        });
+    } catch(err) {
+        container.innerHTML = '<p class="text-center text-red-500 text-sm">Failed to fetch data.</p>';
+    }
+}
+
 function openLeaveModal(id, fname, lname) {
     document.getElementById('leaveDoctorName').innerHTML = "<i class='fa-solid fa-user-md mr-2'></i> Dr. " + fname + " " + lname;
     document.getElementById('leaveForm').action = "/doctors/leave/" + id;
